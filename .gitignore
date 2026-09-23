@@ -1,0 +1,26 @@
+# ---- AI 元文件(禁止上传,见 workspace CLAUDE.md)----
+CLAUDE.md
+memory/
+.claude/
+
+# ---- 构建产物 ----
+build/
+cmake-build-*/
+out/
+
+# ---- 编译产物 ----
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.exe
+
+# ---- IDE / 编辑器 ----
+.vscode/
+.idea/
+*.swp
+
+# ---- 环境 ----
+.env
+.env.local
