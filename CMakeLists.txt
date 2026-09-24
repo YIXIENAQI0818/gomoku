@@ -14,6 +14,10 @@ find_package(Boost CONFIG REQUIRED COMPONENTS system)
 find_package(spdlog REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
+# ---- MySQL 客户端库(阶段 2 起)----
+find_library(MYSQLCLIENT_LIBRARY mysqlclient REQUIRED)
+find_path(MYSQLCLIENT_INCLUDE_DIR mysql/mysql.h REQUIRED)
+
 # ---- 可执行文件 ----
 add_executable(gomoku-server
     src/main.cpp
@@ -22,13 +26,15 @@ add_executable(gomoku-server
     src/net/listener.cpp
     src/protocol/message.cpp
     src/protocol/message_router.cpp
+    src/data/db_pool.cpp
     src/server.cpp
 )
 
-target_include_directories(gomoku-server PRIVATE include)
+target_include_directories(gomoku-server PRIVATE include ${MYSQLCLIENT_INCLUDE_DIR})
 
 target_link_libraries(gomoku-server PRIVATE
     Boost::system
     spdlog::spdlog
     nlohmann_json::nlohmann_json
+    ${MYSQLCLIENT_LIBRARY}
 )

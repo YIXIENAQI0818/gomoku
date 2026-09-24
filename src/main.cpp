@@ -1,6 +1,7 @@
 #include <gomoku/protocol/message.h>
 #include <gomoku/protocol/request_context.h>
 #include <gomoku/server.h>
+#include <gomoku/data/db_pool.h>
 #include <gomoku/net/session.h>
 
 #include <boost/asio.hpp>
@@ -26,6 +27,22 @@ int main(int argc, char* argv[]) {
         server.router().register_handler("echo",
             [](const gomoku::RequestContext& ctx) {
                 ctx.session.send_text(gomoku::serialize_message("echo", ctx.data));
+            });
+        // 2.1 临时验证:触发一次异步 MySQL 查询,验证「线程池隔离阻塞」链路。2.2 移除。
+        server.router().register_handler("db.test",
+            [&server](const gomoku::RequestContext& ctx) {
+                auto session = ctx.session.shared_from_this();
+                server.db().async_query("SELECT VERSION()",
+                    [session](std::error_code ec, gomoku::DBPool::Result rows) {
+                        nlohmann::json data;
+                        if (ec) {
+                            data = {{"error", ec.message()}};
+                        } else {
+                            data = {{"version",
+                                rows.empty() || rows[0].empty() ? "" : rows[0][0]}};
+                        }
+                        session->send_text(gomoku::serialize_message("db.test", data));
+                    });
             });
 
         // 优雅停机:收到 SIGINT/SIGTERM 时停止监听并关闭所有连接。

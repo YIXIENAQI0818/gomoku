@@ -7,7 +7,8 @@
 namespace gomoku {
 
 Server::Server(asio::io_context& io, tcp::endpoint endpoint)
-    : _listener(std::make_shared<Listener>(io, endpoint,
+    : _db(io),
+      _listener(std::make_shared<Listener>(io, endpoint,
           [this](tcp::socket socket) {
               // 创建 Session 的职责归属 Server:Listener 只负责把 socket 交出来。
               std::make_shared<Session>(std::move(socket), _cm, _router)->run();
