@@ -22,13 +22,10 @@ int main(int argc, char* argv[]) {
             io, tcp::endpoint(tcp::v4(), static_cast<unsigned short>(port)));
 
         // 注册业务 handler(阶段 2 起会拆到各服务文件)。
+        // 注:心跳检测由 Session 的 beast 协议层 timeout 负责,不在此注册应用层 ping。
         server.router().register_handler("echo",
             [](const gomoku::RequestContext& ctx) {
                 ctx.session.send_text(gomoku::serialize_message("echo", ctx.data));
-            });
-        server.router().register_handler("ping",
-            [](const gomoku::RequestContext& ctx) {
-                ctx.session.send_text(gomoku::serialize_message("pong", nlohmann::json::object()));
             });
 
         // 优雅停机:收到 SIGINT/SIGTERM 时停止监听并关闭所有连接。

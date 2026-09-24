@@ -4,7 +4,13 @@
 
 #include <spdlog/spdlog.h>
 
+#include <chrono>
 #include <utility>
+
+// 心跳 / 超时底层参数(硬编码,备选见下):
+// - handshake_timeout: 20s(备选 10s / 30s,防止恶意客户端挂起握手)
+// - idle_timeout:      20s(备选 30s / 60s,空闲多久判死)
+// - keep_alive_pings:  true(beast 自动发协议层 ping 探测对端)
 
 namespace gomoku {
 
@@ -12,6 +18,14 @@ Session::Session(tcp::socket socket, ConnectionManager& cm, MessageRouter& route
     : _ws(std::move(socket)), _cm(cm), _router(router) {}
 
 void Session::run() {
+    // 心跳 / 超时配置:handshake_timeout 约束握手;idle_timeout + keep_alive_pings
+    // 在空闲时自动发协议层 ping,对端不回 pong 即判死(async_read 以 timeout 失败)。
+    _ws.set_option(websocket::stream_base::timeout{
+        std::chrono::seconds(20),  // handshake_timeout
+        std::chrono::seconds(20),  // idle_timeout
+        true,                       // keep_alive_pings
+    });
+
     // 握手阶段:用 shared_from_this 让 async_accept 的回调持有本对象。
     _ws.async_accept(
         beast::bind_front_handler(&Session::on_accept, shared_from_this()));
@@ -40,9 +54,13 @@ void Session::on_read(beast::error_code ec, std::size_t bytes) {
     }
     if (ec) {
         // 主动关闭(close()/async_close)会取消或收尾挂起的读,属预期路径;
-        // 只有仍处于 open 状态的读失败才是真正的异常(对端异常断开等)。
+        // 只有仍处于 open 状态的读失败才是真正的异常。
         if (_state == State::open) {
-            spdlog::warn("读取失败: {}", ec.message());
+            if (ec == beast::error::timeout) {
+                spdlog::info("心跳超时,判定死连接,主动断开");
+            } else {
+                spdlog::warn("读取失败: {}", ec.message());
+            }
         }
         shutdown();
         return;
@@ -74,16 +92,35 @@ void Session::do_write() {
 
 void Session::on_write(beast::error_code ec, std::size_t bytes) {
     if (ec) {
-        spdlog::warn("写入失败: {}", ec.message());
+        // 写失败:仅 open 状态才算真错误;closing/closed 是关闭流程中的预期中断
+        // (如 async_write 期间被客户端关闭),不再当作错误记录。
+        _writing = false;
+        if (_state == State::open) {
+            spdlog::warn("写入失败: {}", ec.message());
+        }
         shutdown();
         return;
     }
     _outgoing.pop_front();
     _writing = false;
+
+    // async_write 期间,状态可能已被其他回调改动(如 on_read 收到客户端关闭 → closed),
+    // 这里必须重新判断,不能假设仍在 open。
+    if (_state == State::closed) {
+        return;  // 连接已彻底关闭,不再做任何写操作
+    }
+    if (_state == State::closing) {
+        // 服务器主动关闭:发完剩余消息,队列清空后再发 Close Frame。
+        if (_outgoing.empty()) {
+            do_close();
+        } else {
+            do_write();
+        }
+        return;
+    }
+    // _state == open:正常继续写队列。
     if (!_outgoing.empty()) {
-        do_write();  // 继续写队列
-    } else if (_state == State::closing) {
-        do_close();  // 队列清空且待关闭 → 发 Close Frame
+        do_write();
     }
 }
 
