@@ -11,6 +11,7 @@
     <button id="close">断开</button>
   </p>
   <p>
+    <input id="type" placeholder="type" value="echo" size="12">
     <input id="msg" placeholder="输入一条消息">
     <button id="send">发送</button>
   </p>
@@ -38,8 +39,9 @@
 
     document.getElementById('send').onclick = () => {
       if (!ws || ws.readyState !== WebSocket.OPEN) { log('[系统] 尚未连接'); return; }
+      const type = document.getElementById('type').value;
       const text = document.getElementById('msg').value;
-      const msg = JSON.stringify({ type: 'echo', data: { text: text } });
+      const msg = JSON.stringify({ type: type, data: { text: text } });
       ws.send(msg);
       log('[发送] ' + msg);
     };
