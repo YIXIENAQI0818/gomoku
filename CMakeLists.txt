@@ -17,6 +17,9 @@ find_package(nlohmann_json REQUIRED)
 # ---- 可执行文件 ----
 add_executable(gomoku-server
     src/main.cpp
+    src/connection_manager.cpp
+    src/session.cpp
+    src/listener.cpp
 )
 
 target_include_directories(gomoku-server PRIVATE include)
