@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <title>WebSocket Echo 测试</title>
+</head>
+<body>
+  <h1>WebSocket Echo 测试</h1>
+  <p>
+    <button id="connect">连接</button>
+    <button id="close">断开</button>
+  </p>
+  <p>
+    <input id="msg" placeholder="输入一条消息">
+    <button id="send">发送</button>
+  </p>
+  <pre id="log"></pre>
+
+  <script>
+    let ws = null;
+    const logEl = document.getElementById('log');
+    function log(s) { logEl.textContent += s + '\n'; }
+
+    document.getElementById('connect').onclick = () => {
+      ws = new WebSocket('ws://localhost:8080');
+      ws.onopen = () => log('[系统] 已连接');
+      ws.onmessage = (e) => log('[收到 echo] ' + e.data);
+      ws.onclose = () => log('[系统] 已断开');
+      ws.onerror = () => log('[系统] 连接出错');
+    };
+
+    document.getElementById('send').onclick = () => {
+      if (!ws || ws.readyState !== WebSocket.OPEN) { log('[系统] 尚未连接'); return; }
+      const text = document.getElementById('msg').value;
+      ws.send(text);
+      log('[发送] ' + text);
+    };
+
+    document.getElementById('close').onclick = () => { if (ws) ws.close(); };
+  </script>
+</body>
+</html>
