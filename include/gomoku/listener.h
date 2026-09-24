@@ -24,9 +24,9 @@ private:
     void do_accept();
     void on_accept(beast::error_code ec, tcp::socket socket);
 
-    asio::io_context& io_;
-    tcp::acceptor acceptor_;
-    ConnectionManager& cm_;
+    asio::io_context& _io;
+    tcp::acceptor _acceptor;
+    ConnectionManager& _cm;
 };
 
 }  // namespace gomoku

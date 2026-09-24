@@ -4,17 +4,17 @@
 namespace gomoku {
 
 void ConnectionManager::join(const std::shared_ptr<Session>& session) {
-    sessions_.insert(session);
+    _sessions.insert(session);
 }
 
 void ConnectionManager::leave(const std::shared_ptr<Session>& session) {
-    sessions_.erase(session);
+    _sessions.erase(session);
 }
 
 void ConnectionManager::stop_all() {
-    // 先拷贝一份:close() 会触发 Session 的回调 → leave() → 修改 sessions_,
+    // 先拷贝一份:close() 会触发 Session 的回调 → leave() → 修改 _sessions,
     // 若直接遍历原集合会导致迭代器失效。
-    auto sessions = sessions_;
+    auto sessions = _sessions;
     for (const auto& session : sessions) {
         session->close();
     }

@@ -6,11 +6,11 @@
 namespace gomoku {
 
 Session::Session(tcp::socket socket, ConnectionManager& cm)
-    : ws_(std::move(socket)), cm_(cm) {}
+    : _ws(std::move(socket)), _cm(cm) {}
 
 void Session::run() {
     // 握手阶段:用 shared_from_this 让 async_accept 的回调持有本对象。
-    ws_.async_accept(
+    _ws.async_accept(
         beast::bind_front_handler(&Session::on_accept, shared_from_this()));
 }
 
@@ -18,7 +18,7 @@ void Session::close() {
     // 直接关闭底层 socket,让挂起的 async_read 以错误收尾,
     // 从而进入 on_read 的收尾分支(→ shutdown → leave)。
     beast::error_code ec;
-    ws_.next_layer().close(ec);
+    _ws.next_layer().close(ec);
 }
 
 void Session::on_accept(beast::error_code ec) {
@@ -27,13 +27,13 @@ void Session::on_accept(beast::error_code ec) {
         return;  // 尚未 join,无需 leave
     }
     // 握手成功,登记到连接管理器。
-    cm_.join(shared_from_this());
-    spdlog::info("客户端已连接,当前连接数 {}", cm_.size());
+    _cm.join(shared_from_this());
+    spdlog::info("客户端已连接,当前连接数 {}", _cm.size());
     do_read();
 }
 
 void Session::do_read() {
-    ws_.async_read(buffer_,
+    _ws.async_read(_buffer,
         beast::bind_front_handler(&Session::on_read, shared_from_this()));
 }
 
@@ -48,8 +48,8 @@ void Session::on_read(beast::error_code ec, std::size_t bytes) {
         return;
     }
     // echo:把收到的消息原样写回。
-    ws_.text(ws_.got_text());
-    ws_.async_write(buffer_.data(),
+    _ws.text(_ws.got_text());
+    _ws.async_write(_buffer.data(),
         beast::bind_front_handler(&Session::on_write, shared_from_this()));
 }
 
@@ -59,15 +59,15 @@ void Session::on_write(beast::error_code ec, std::size_t bytes) {
         shutdown();
         return;
     }
-    buffer_.consume(buffer_.size());
+    _buffer.consume(_buffer.size());
     do_read();
 }
 
 void Session::shutdown() {
-    if (closed_) return;  // 幂等:只注销一次
-    closed_ = true;
-    cm_.leave(shared_from_this());
-    spdlog::info("客户端断开,当前连接数 {}", cm_.size());
+    if (_closed) return;  // 幂等:只注销一次
+    _closed = true;
+    _cm.leave(shared_from_this());
+    spdlog::info("客户端断开,当前连接数 {}", _cm.size());
 }
 
 }  // namespace gomoku

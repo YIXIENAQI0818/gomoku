@@ -38,10 +38,10 @@ private:
     // 统一收尾:从 ConnectionManager 注销自身,保证只执行一次。
     void shutdown();
 
-    websocket::stream<tcp::socket> ws_;
-    beast::flat_buffer buffer_;
-    ConnectionManager& cm_;  // 裸引用,不持有所有权,避免与 manager 形成 shared_ptr 循环
-    bool closed_ = false;
+    websocket::stream<tcp::socket> _ws;
+    beast::flat_buffer _buffer;
+    ConnectionManager& _cm;  // 裸引用,不持有所有权,避免与 manager 形成 shared_ptr 循环
+    bool _closed = false;
 };
 
 }  // namespace gomoku

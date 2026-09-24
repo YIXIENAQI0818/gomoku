@@ -28,11 +28,11 @@ public:
     void stop_all();
 
     // 当前活跃连接数。
-    std::size_t size() const noexcept { return sessions_.size(); }
+    std::size_t size() const noexcept { return _sessions.size(); }
 
 private:
     // 用 shared_ptr 持有 Session:连接存活期间由这里统一管理其生命周期。
-    std::unordered_set<std::shared_ptr<Session>> sessions_;
+    std::unordered_set<std::shared_ptr<Session>> _sessions;
 };
 
 }  // namespace gomoku
