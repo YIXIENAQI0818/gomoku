@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <string>
 
 namespace gomoku {
 
@@ -40,6 +41,7 @@ private:
 
     websocket::stream<tcp::socket> _ws;
     beast::flat_buffer _buffer;
+    std::string _out;        // 待发送消息缓冲(async_write 期间需保持存活)
     ConnectionManager& _cm;  // 裸引用,不持有所有权,避免与 manager 形成 shared_ptr 循环
     bool _closed = false;
 };

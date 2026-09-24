@@ -20,6 +20,7 @@ add_executable(gomoku-server
     src/connection_manager.cpp
     src/session.cpp
     src/listener.cpp
+    src/message.cpp
 )
 
 target_include_directories(gomoku-server PRIVATE include)

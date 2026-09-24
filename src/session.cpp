@@ -1,5 +1,6 @@
 #include <gomoku/session.h>
 #include <gomoku/connection_manager.h>
+#include <gomoku/message.h>
 
 #include <spdlog/spdlog.h>
 
@@ -47,9 +48,23 @@ void Session::on_read(beast::error_code ec, std::size_t bytes) {
         shutdown();
         return;
     }
-    // echo:把收到的消息原样写回。
-    _ws.text(_ws.got_text());
-    _ws.async_write(_buffer.data(),
+    // 1.3:把收到的原始字节解析成结构化消息。
+    std::string text = beast::buffers_to_string(_buffer.data());
+    _buffer.consume(_buffer.size());
+
+    auto msg = parse_message(text);
+    if (!msg) {
+        spdlog::warn("收到非法消息,忽略: {}", text);
+        do_read();
+        return;
+    }
+
+    spdlog::info("收到消息 type={}", msg->type);
+    // 暂时回一个结构化 ack,按 type 路由留到 1.4。
+    nlohmann::json data = {{"received", msg->type}};
+    _out = serialize_message("echo", data);
+    _ws.text(true);
+    _ws.async_write(boost::asio::buffer(_out),
         beast::bind_front_handler(&Session::on_write, shared_from_this()));
 }
 
@@ -59,7 +74,7 @@ void Session::on_write(beast::error_code ec, std::size_t bytes) {
         shutdown();
         return;
     }
-    _buffer.consume(_buffer.size());
+    _out.clear();  // 写完成,清空输出缓冲
     do_read();
 }
 

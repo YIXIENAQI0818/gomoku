@@ -24,7 +24,14 @@
     document.getElementById('connect').onclick = () => {
       ws = new WebSocket('ws://localhost:8080');
       ws.onopen = () => log('[系统] 已连接');
-      ws.onmessage = (e) => log('[收到 echo] ' + e.data);
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          log('[收到] type=' + msg.type + '  data=' + JSON.stringify(msg.data));
+        } catch (_) {
+          log('[收到原始] ' + e.data);
+        }
+      };
       ws.onclose = () => log('[系统] 已断开');
       ws.onerror = () => log('[系统] 连接出错');
     };
@@ -32,8 +39,9 @@
     document.getElementById('send').onclick = () => {
       if (!ws || ws.readyState !== WebSocket.OPEN) { log('[系统] 尚未连接'); return; }
       const text = document.getElementById('msg').value;
-      ws.send(text);
-      log('[发送] ' + text);
+      const msg = JSON.stringify({ type: 'echo', data: { text: text } });
+      ws.send(msg);
+      log('[发送] ' + msg);
     };
 
     document.getElementById('close').onclick = () => { if (ws) ws.close(); };
