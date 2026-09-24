@@ -1,6 +1,6 @@
 #include <gomoku/server.h>
-#include <gomoku/listener.h>
-#include <gomoku/session.h>
+#include <gomoku/net/listener.h>
+#include <gomoku/net/session.h>
 
 #include <utility>
 

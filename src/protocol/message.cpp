@@ -1,4 +1,4 @@
-#include <gomoku/message.h>
+#include <gomoku/protocol/message.h>
 
 namespace gomoku {
 

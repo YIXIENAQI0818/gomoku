@@ -1,5 +1,5 @@
-#include <gomoku/connection_manager.h>
-#include <gomoku/session.h>
+#include <gomoku/net/connection_manager.h>
+#include <gomoku/net/session.h>
 
 namespace gomoku {
 

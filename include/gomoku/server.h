@@ -1,8 +1,8 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <gomoku/connection_manager.h>
-#include <gomoku/message_router.h>
+#include <gomoku/net/connection_manager.h>
+#include <gomoku/protocol/message_router.h>
 
 #include <memory>
 

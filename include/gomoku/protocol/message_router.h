@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gomoku/request_context.h>
+#include <gomoku/protocol/request_context.h>
 
 #include <functional>
 #include <string>

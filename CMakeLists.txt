@@ -17,11 +17,11 @@ find_package(nlohmann_json REQUIRED)
 # ---- 可执行文件 ----
 add_executable(gomoku-server
     src/main.cpp
-    src/connection_manager.cpp
-    src/session.cpp
-    src/listener.cpp
-    src/message.cpp
-    src/message_router.cpp
+    src/net/connection_manager.cpp
+    src/net/session.cpp
+    src/net/listener.cpp
+    src/protocol/message.cpp
+    src/protocol/message_router.cpp
     src/server.cpp
 )
 

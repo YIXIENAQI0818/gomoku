@@ -1,7 +1,7 @@
-#include <gomoku/message.h>
-#include <gomoku/request_context.h>
+#include <gomoku/protocol/message.h>
+#include <gomoku/protocol/request_context.h>
 #include <gomoku/server.h>
-#include <gomoku/session.h>
+#include <gomoku/net/session.h>
 
 #include <boost/asio.hpp>
 #include <boost/asio/signal_set.hpp>

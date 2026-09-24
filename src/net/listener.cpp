@@ -1,4 +1,4 @@
-#include <gomoku/listener.h>
+#include <gomoku/net/listener.h>
 
 #include <spdlog/spdlog.h>
 

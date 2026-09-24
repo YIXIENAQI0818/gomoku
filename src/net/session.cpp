@@ -1,6 +1,6 @@
-#include <gomoku/session.h>
-#include <gomoku/connection_manager.h>
-#include <gomoku/message_router.h>
+#include <gomoku/net/session.h>
+#include <gomoku/net/connection_manager.h>
+#include <gomoku/protocol/message_router.h>
 
 #include <spdlog/spdlog.h>
 
