@@ -31,6 +31,9 @@ public:
     // 异步查询:提交一条 SQL,结果在事件循环线程通过回调返回。
     void async_query(std::string sql, QueryCallback cb);
 
+    // 关闭数据层:停止线程池并等待线程退出(thread_local 连接随之关闭)。
+    void stop();
+
 private:
     asio::io_context& _io;
     asio::thread_pool _pool;  // 后台线程池,执行阻塞 MySQL

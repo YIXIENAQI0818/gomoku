@@ -19,8 +19,9 @@ void Server::run() {
 }
 
 void Server::stop() {
-    _listener->stop();  // 停止接受新连接
-    _cm.stop_all();     // 关闭已有连接
+    _listener->stop();  // 1. 停止接受新连接
+    _cm.stop_all();     // 2. 关闭已有连接
+    _db.stop();         // 3. 关闭数据层(停止线程池)
 }
 
 }  // namespace gomoku

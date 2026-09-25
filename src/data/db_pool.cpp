@@ -1,6 +1,7 @@
 #include <gomoku/data/db_pool.h>
 
 #include <mysql/mysql.h>
+#include <mysql/errmsg.h>
 
 #include <spdlog/spdlog.h>
 
@@ -40,6 +41,9 @@ public:
         return _conn;
     }
 
+    // 查询失败(连接丢失)时调用:关闭连接,下次 get() 重新建立。
+    void reset() { close(); }
+
 private:
     void close() {
         if (_conn) {
@@ -59,7 +63,12 @@ std::pair<std::error_code, DBPool::Result> execute(const std::string& sql) {
         return {std::make_error_code(std::errc::io_error), {}};
     }
     if (mysql_query(conn, sql.c_str()) != 0) {
-        spdlog::error("MySQL 查询失败: {}", mysql_error(conn));
+        unsigned int err = mysql_errno(conn);
+        spdlog::error("MySQL 查询失败 [{}]: {}", err, mysql_error(conn));
+        // 连接丢失类错误:关闭连接,下次查询自动重连。
+        if (err == CR_SERVER_GONE_ERROR || err == CR_SERVER_LOST) {
+            t_conn.reset();
+        }
         return {std::make_error_code(std::errc::io_error), {}};
     }
 
@@ -83,6 +92,11 @@ std::pair<std::error_code, DBPool::Result> execute(const std::string& sql) {
 }  // namespace
 
 DBPool::DBPool(asio::io_context& io) : _io(io), _pool(kPoolSize) {}
+
+void DBPool::stop() {
+    _pool.stop();   // 停止接受新任务
+    _pool.join();   // 等待线程退出(短暂阻塞,thread_local 连接随之关闭)
+}
 
 void DBPool::async_query(std::string sql, QueryCallback cb) {
     // 第一次 post:把阻塞查询扔进线程池,事件循环立即返回、继续服务其他连接。
