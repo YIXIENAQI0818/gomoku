@@ -18,6 +18,10 @@ find_package(nlohmann_json REQUIRED)
 find_library(MYSQLCLIENT_LIBRARY mysqlclient REQUIRED)
 find_path(MYSQLCLIENT_INCLUDE_DIR mysql/mysql.h REQUIRED)
 
+# ---- Redis 客户端库(阶段 2 起)----
+find_library(HIREDIS_LIBRARY hiredis REQUIRED)
+find_path(HIREDIS_INCLUDE_DIR hiredis/hiredis.h REQUIRED)
+
 # ---- 可执行文件 ----
 add_executable(gomoku-server
     src/main.cpp
@@ -27,14 +31,16 @@ add_executable(gomoku-server
     src/protocol/message.cpp
     src/protocol/message_router.cpp
     src/data/db_pool.cpp
+    src/data/cache.cpp
     src/server.cpp
 )
 
-target_include_directories(gomoku-server PRIVATE include ${MYSQLCLIENT_INCLUDE_DIR})
+target_include_directories(gomoku-server PRIVATE include ${MYSQLCLIENT_INCLUDE_DIR} ${HIREDIS_INCLUDE_DIR})
 
 target_link_libraries(gomoku-server PRIVATE
     Boost::system
     spdlog::spdlog
     nlohmann_json::nlohmann_json
     ${MYSQLCLIENT_LIBRARY}
+    ${HIREDIS_LIBRARY}
 )

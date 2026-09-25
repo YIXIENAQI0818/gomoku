@@ -4,6 +4,7 @@
 #include <gomoku/net/connection_manager.h>
 #include <gomoku/protocol/message_router.h>
 #include <gomoku/data/db_pool.h>
+#include <gomoku/data/cache.h>
 
 #include <memory>
 
@@ -27,6 +28,7 @@ public:
     MessageRouter& router() noexcept { return _router; }
     ConnectionManager& connections() noexcept { return _cm; }
     DBPool& db() noexcept { return _db; }
+    Cache& cache() noexcept { return _cache; }
 
     Server(const Server&) = delete;
     Server& operator=(const Server&) = delete;
@@ -34,7 +36,8 @@ public:
 private:
     ConnectionManager _cm;                  // 先构造
     MessageRouter _router;                  // 先构造
-    DBPool _db;                             // 数据层(线程池)
+    DBPool _db;                             // 数据层:MySQL(线程池)
+    Cache _cache;                           // 数据层:Redis(单工作线程)
     std::shared_ptr<Listener> _listener;    // 后构造(回调捕获 this 引用 _cm/_router)
 };
 

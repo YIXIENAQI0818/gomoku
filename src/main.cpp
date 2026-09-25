@@ -44,6 +44,30 @@ int main(int argc, char* argv[]) {
                         session->send_text(gomoku::serialize_message("db.test", data));
                     });
             });
+        // 2.2 临时验证:SET→GET 值往返,验证「hiredis→asio 异步桥接 + 链式回调」链路。2.3 移除。
+        server.router().register_handler("redis.test",
+            [&server](const gomoku::RequestContext& ctx) {
+                auto session = ctx.session.shared_from_this();
+                auto fail = [session](const std::string& err) {
+                    session->send_text(gomoku::serialize_message(
+                        "redis.test", nlohmann::json{{"error", err}}));
+                };
+                server.cache().async_command({"SET", "gomoku:test", "hello"},
+                    [&server, session, fail](std::error_code ec, gomoku::Cache::Reply) {
+                        if (ec) { fail(ec.message()); return; }
+                        server.cache().async_command({"GET", "gomoku:test"},
+                            [session, fail](std::error_code ec2, gomoku::Cache::Reply reply) {
+                                if (ec2) { fail(ec2.message()); return; }
+                                nlohmann::json data;
+                                if (reply.kind == gomoku::Cache::Reply::Kind::Nil) {
+                                    data = {{"error", "key 不存在(意外)"}};
+                                } else {
+                                    data = {{"value", reply.str}};
+                                }
+                                session->send_text(gomoku::serialize_message("redis.test", data));
+                            });
+                    });
+            });
 
         // 优雅停机:收到 SIGINT/SIGTERM 时停止监听并关闭所有连接。
         asio::signal_set signals(io, SIGINT, SIGTERM);
